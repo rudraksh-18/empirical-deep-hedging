@@ -1,0 +1,23 @@
+# Python virtual environment
+venv/
+env/
+.env
+
+# Cache directories
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Generated outputs and heavy data
+checkpoints/
+results/
+data/cache/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Research papers or large PDFs (optional, but good practice to not bloat the repo)
+*.pdf
