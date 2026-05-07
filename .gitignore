@@ -10,7 +10,8 @@ __pycache__/
 
 # Generated outputs and heavy data
 checkpoints/
-results/
+results/*
+!results/figs/
 data/cache/
 
 # IDE and OS files
