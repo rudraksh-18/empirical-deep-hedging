@@ -1,19 +1,5 @@
 """
 evaluate.py
------------
-Load trained checkpoints and compare TD3, DDPG, and Black-Scholes hedger
-on held-out evaluation paths.
-
-Usage
------
-    python evaluate.py                         # default eval
-    python evaluate.py --tc 0.0 0.001 0.005   # sweep transaction costs
-    python evaluate.py --model merton          # use jump-diffusion paths
-
-Outputs
--------
-- Console table: mean P&L, std, CVaR-95, Sharpe ratio for each strategy
-- results/eval_summary.json — machine-readable results
 """
 
 import argparse
@@ -28,7 +14,7 @@ from agents.ddpg_agent     import DDPGAgent
 from envs.hedging_env      import HedgingEnv
 
 
-# ── Evaluate one RL agent ─────────────────────────────────────────────────────
+
 
 def evaluate_rl(agent, eval_S, eval_v, tc, n_episodes=1000):
     """Roll out agent deterministically; return array of episode P&Ls."""
@@ -44,7 +30,7 @@ def evaluate_rl(agent, eval_S, eval_v, tc, n_episodes=1000):
     return np.array(pnls)
 
 
-# ── Summarise a P&L array ─────────────────────────────────────────────────────
+
 
 def summarise(pnls: np.ndarray, label: str) -> dict:
     sorted_p = np.sort(pnls)
@@ -62,7 +48,7 @@ def summarise(pnls: np.ndarray, label: str) -> dict:
     }
 
 
-# ── Pretty-print table ────────────────────────────────────────────────────────
+
 
 def print_table(results: list):
     header = f"{'Strategy':<12} {'Mean P&L':>10} {'Std':>8} {'CVaR-95':>10} {'Sharpe':>8}"
@@ -77,7 +63,7 @@ def print_table(results: list):
     print("="*55 + "\n")
 
 
-# ── Main ─────────────────────────────────────────────────────────────────────
+
 
 def parse_args():
     p = argparse.ArgumentParser(description="Evaluate deep hedging strategies")
@@ -98,7 +84,7 @@ def main():
     print("  EMPIRICAL DEEP HEDGING — EVALUATION")
     print("="*60)
 
-    # Generate eval data
+
     eval_S, eval_v = generate_and_cache(args.model, config.N_EVAL_PATHS, seed=999)
 
     all_results = {}
@@ -108,13 +94,10 @@ def main():
 
         results = []
 
-        # ── Black-Scholes Benchmark ─────────────────────────────────────
-        print("  Evaluating Black-Scholes delta hedge...")
         bs_hedger = BlackScholesHedger(tc=tc)
         bs_metrics = bs_hedger.evaluate(eval_S[:args.n_episodes], eval_v[:args.n_episodes])
         results.append(summarise(bs_metrics["all_pnls"], "Black-Scholes"))
 
-        # ── TD3 ──────────────────────────────────────────────────────────
         td3_ckpt = os.path.join(args.ckpt_dir, "td3_final_actor.pt")
         if os.path.exists(td3_ckpt):
             print("  Evaluating TD3...")
@@ -126,7 +109,6 @@ def main():
         else:
             print(f"  [WARN] TD3 checkpoint not found at {td3_ckpt}. Run train.py first.")
 
-        # ── DDPG ─────────────────────────────────────────────────────────
         ddpg_ckpt = os.path.join(args.ckpt_dir, "ddpg_final_actor.pt")
         if os.path.exists(ddpg_ckpt):
             print("  Evaluating DDPG...")
@@ -141,7 +123,7 @@ def main():
         print_table(results)
         all_results[f"tc_{tc}"] = results
 
-    # Save summary
+
     os.makedirs(config.RESULTS_DIR, exist_ok=True)
     out_path = os.path.join(config.RESULTS_DIR, "eval_summary.json")
     with open(out_path, "w") as f:

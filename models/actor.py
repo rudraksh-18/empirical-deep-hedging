@@ -1,24 +1,5 @@
 """
 models/actor.py
----------------
-LSTM + MLP Actor network for the hedging agent.
-
-Architecture (our improvement over the paper's plain MLP)
----------------------------------------------------------
-Input: obs_seq  shape (batch, seq_len, obs_dim)
-   └─► LSTM(obs_dim, lstm_hidden, lstm_layers)   ← captures path-dependence
-       └─► last hidden state h  shape (batch, lstm_hidden)
-           └─► LayerNorm
-               └─► FC(lstm_hidden → fc_hidden), ReLU
-                   └─► FC(fc_hidden → fc_hidden//2), ReLU
-                       └─► FC(fc_hidden//2 → 1), Tanh
-                           └─► delta ∈ (-1, 1)
-
-Why LSTM?
-  Option hedging P&L depends on the *path* of prices (volatility clustering,
-  momentum).  A plain MLP sees only the current snapshot; LSTM accumulates
-  a hidden memory of recent market dynamics, enabling smarter hedging in
-  trending or mean-reverting vol regimes.
 """
 
 import torch
@@ -29,16 +10,7 @@ import config
 
 
 class LSTMActor(nn.Module):
-    """
-    LSTM + MLP policy network.  Outputs a scalar action ∈ (-1, 1).
-
-    Parameters
-    ----------
-    obs_dim     : number of features per time-step
-    lstm_hidden : LSTM hidden-state dimension
-    lstm_layers : number of stacked LSTM layers
-    fc_hidden   : fully-connected hidden dimension
-    """
+    """LSTM + MLP policy network. Outputs a scalar action ∈ (-1, 1)."""
 
     def __init__(
         self,
@@ -71,7 +43,7 @@ class LSTMActor(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
-        """Orthogonal initialisation for LSTM; small uniform for output layer."""
+        """Orthogonal initialisation for LSTM."""
         for name, p in self.lstm.named_parameters():
             if "weight" in name:
                 nn.init.orthogonal_(p)
@@ -86,15 +58,7 @@ class LSTMActor(nn.Module):
         nn.init.zeros_(self.fc[-2].bias)
 
     def forward(self, obs_seq: torch.Tensor) -> torch.Tensor:
-        """
-        Parameters
-        ----------
-        obs_seq : (batch, seq_len, obs_dim)
 
-        Returns
-        -------
-        action  : (batch, 1)   — target delta ∈ (-1, 1)
-        """
         self.lstm.flatten_parameters()
         # LSTM — only keep last hidden state
         _, (h_n, _) = self.lstm(obs_seq)

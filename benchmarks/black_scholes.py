@@ -1,17 +1,5 @@
 """
 benchmarks/black_scholes.py
-----------------------------
-Classic Black-Scholes pricing and delta-hedging benchmark.
-
-Functions
----------
-bs_call_price   — Closed-form European call price (Black-Scholes)
-bs_delta        — BS delta (∂C/∂S)
-bs_implied_vol  — Implied volatility via Brent root-finding
-run_bs_hedger   — Simulate a full delta-hedging episode; returns episode P&L
-
-The BlackScholesHedger class wraps run_bs_hedger for batch evaluation and
-computing summary statistics comparable to the RL agents.
 """
 
 import numpy as np
@@ -22,7 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import config
 
 
-# ── Core BS Formulae ─────────────────────────────────────────────────────────
+
 
 def _d1(S, K, tau, r, sigma):
     """BS d1 term. tau in years."""
@@ -30,17 +18,7 @@ def _d1(S, K, tau, r, sigma):
 
 
 def bs_call_price(S, K, tau, r, sigma):
-    """
-    Black-Scholes European call price.
-
-    Parameters
-    ----------
-    S     : current underlying price
-    K     : strike price
-    tau   : time to expiry in years
-    r     : risk-free rate (annualised)
-    sigma : volatility (annualised)
-    """
+    """Black-Scholes European call price."""
     if tau <= 0:
         return max(S - K, 0.0)
     d1 = _d1(S, K, tau, r, sigma)
@@ -77,7 +55,7 @@ def bs_implied_vol(market_price, S, K, tau, r, tol=1e-6, max_iter=200):
         return np.nan
 
 
-# ── Episode Hedging Simulator ────────────────────────────────────────────────
+
 
 def run_bs_hedger(
     path_S: np.ndarray,
@@ -87,27 +65,7 @@ def run_bs_hedger(
     dt: float = config.DT,
     tc: float = config.TC,
 ) -> float:
-    """
-    Run one Black-Scholes delta-hedging episode on a pre-generated path.
-
-    At each time-step, the hedge ratio is set to the BS delta computed
-    with the *true* instantaneous Heston volatility (sqrt(v_t)).  This is the
-    "oracle" BS hedge — the best a model-based approach can do given the
-    correct volatility.
-
-    Parameters
-    ----------
-    path_S : 1-D array, shape (T+1,) — underlying price path
-    path_v : 1-D array, shape (T+1,) — variance path
-    K      : strike
-    r      : risk-free rate
-    dt     : step size (years)
-    tc     : proportional transaction cost
-
-    Returns
-    -------
-    total_pnl : float — total P&L of the hedged portfolio (normalised)
-    """
+    """Run one Black-Scholes delta-hedging episode."""
     T = len(path_S) - 1
     option_premium = bs_call_price(path_S[0], K, T * dt, r, np.sqrt(path_v[0]))
     option_premium = max(option_premium, 1e-6)
@@ -136,7 +94,7 @@ def run_bs_hedger(
     return total_pnl / option_premium
 
 
-# ── Batch Evaluation Helper ──────────────────────────────────────────────────
+
 
 class BlackScholesHedger:
     """Wrapper for batch evaluation of the BS delta-hedge strategy."""
@@ -145,13 +103,7 @@ class BlackScholesHedger:
         self.tc = tc
 
     def evaluate(self, paths_S: np.ndarray, paths_v: np.ndarray) -> dict:
-        """
-        Evaluate BS delta hedge on a batch of paths.
-
-        Returns
-        -------
-        dict with keys: pnl_mean, pnl_std, pnl_cvar95, hedging_error
-        """
+        """Evaluate BS delta hedge on a batch of paths."""
         n = len(paths_S)
         pnls = np.array([
             run_bs_hedger(paths_S[i], paths_v[i], tc=self.tc)

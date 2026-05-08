@@ -1,14 +1,5 @@
 """
 data/generate_data.py
----------------------
-Synthetic market data generators for the deep hedging project.
-
-Two models are implemented:
-  1. HestonSimulator       — Stochastic volatility (Euler–Maruyama)
-  2. MertonJumpSimulator   — Jump-diffusion (adds Poisson jumps on top of GBM)
-
-Both return (S_paths, v_paths) of shape (n_paths, T_DAYS+1) suitable for
-direct consumption by HedgingEnv.
 """
 
 import numpy as np
@@ -20,13 +11,9 @@ import config
 class HestonSimulator:
     """
     Heston (1993) stochastic volatility model.
-
     dS  = mu * S * dt  + sqrt(v) * S * dW1
     dv  = kappa*(theta - v)*dt + sigma_v*sqrt(v)*dW2
     corr(dW1, dW2) = rho
-
-    The log-Euler scheme is used for S to keep prices strictly positive.
-    Variance is reflected at zero to avoid negative values.
     """
 
     def __init__(
@@ -52,14 +39,7 @@ class HestonSimulator:
         self.dt = dt
 
     def simulate(self, n_paths: int, seed: int = None) -> tuple:
-        """
-        Simulate n_paths independent Heston paths.
-
-        Returns
-        -------
-        S : np.ndarray, shape (n_paths, T_days+1)
-        v : np.ndarray, shape (n_paths, T_days+1)
-        """
+        """Simulate n_paths independent Heston paths."""
         if seed is not None:
             np.random.seed(seed)
 
@@ -98,10 +78,7 @@ class HestonSimulator:
 class MertonJumpSimulator:
     """
     Merton (1976) Jump-Diffusion model layered on top of Heston.
-
-    Jump component:  Poisson(lambda*dt) jumps per step,
-                     each jump size ~ LogNormal(mu_J, sigma_J^2).
-    Variance process follows Heston (no jump in variance here).
+    Jump component: Poisson(lambda*dt) jumps per step, size ~ LogNormal(mu_J, sigma_J^2).
     """
 
     def __init__(
@@ -126,14 +103,7 @@ class MertonJumpSimulator:
         self.dt = dt
 
     def simulate(self, n_paths: int, seed: int = None) -> tuple:
-        """
-        Simulate Heston paths and add Merton jumps.
-
-        Returns
-        -------
-        S : np.ndarray, shape (n_paths, T_days+1)
-        v : np.ndarray, shape (n_paths, T_days+1)
-        """
+        """Simulate Heston paths and add Merton jumps."""
         if seed is not None:
             np.random.seed(seed)
 
@@ -161,15 +131,7 @@ class MertonJumpSimulator:
 
 
 def generate_and_cache(model: str = "heston", n_paths: int = config.N_TRAIN_PATHS, seed: int = 42):
-    """
-    Generate and optionally cache paths to disk.
-
-    Parameters
-    ----------
-    model   : 'heston' or 'merton'
-    n_paths : number of paths to generate
-    seed    : random seed for reproducibility
-    """
+    """Generate and optionally cache paths to disk."""
     os.makedirs(config.DATA_CACHE, exist_ok=True)
     cache_S = os.path.join(config.DATA_CACHE, f"{model}_{n_paths}_S.npy")
     cache_v = os.path.join(config.DATA_CACHE, f"{model}_{n_paths}_v.npy")

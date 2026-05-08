@@ -1,17 +1,5 @@
 """
 agents/replay_buffer.py
------------------------
-Experience replay buffer that stores *sequence* observations for LSTM agents.
-
-Each transition stored:
-  obs_seq      : (seq_len, obs_dim)   — observation history at time t
-  action       : (1,)                 — agent action a_t
-  reward       : scalar               — immediate reward r_t
-  next_obs_seq : (seq_len, obs_dim)   — observation history at time t+1
-  done         : bool                 — episode terminal flag
-
-Memory estimate (default config):
-  200,000 transitions × 20 × 5 × 4 bytes ≈ 80 MB  (very manageable)
 """
 
 import numpy as np
@@ -22,17 +10,7 @@ import config
 
 
 class ReplayBuffer:
-    """
-    Circular replay buffer for sequence-based observations.
-
-    Parameters
-    ----------
-    buffer_size : maximum number of transitions to store
-    obs_dim     : observation feature dimension
-    seq_len     : LSTM history window
-    action_dim  : action dimension (1 for scalar delta)
-    device      : torch device for sampled tensors
-    """
+    """Circular replay buffer for sequence-based observations."""
 
     def __init__(
         self,
@@ -57,7 +35,7 @@ class ReplayBuffer:
         self.rewards  = np.zeros((buffer_size, 1),                 dtype=np.float32)
         self.dones    = np.zeros((buffer_size, 1),                 dtype=np.float32)
 
-    # ── Public API ──────────────────────────────────────────────────────────
+
 
     def add(
         self,
@@ -78,17 +56,7 @@ class ReplayBuffer:
         self.size = min(self.size + 1, self.max_size)
 
     def sample(self, batch_size: int = config.BATCH_SIZE) -> dict:
-        """
-        Sample a random mini-batch of transitions.
-
-        Returns
-        -------
-        dict of torch.Tensors on self.device:
-          obs, next_obs : (batch, seq_len, obs_dim)
-          actions       : (batch, action_dim)
-          rewards       : (batch, 1)
-          dones         : (batch, 1)
-        """
+        """Sample a random mini-batch of transitions."""
         idx = np.random.randint(0, self.size, size=batch_size)
         return {
             "obs":      self._to_tensor(self.obs[idx]),
@@ -101,7 +69,7 @@ class ReplayBuffer:
     def __len__(self) -> int:
         return self.size
 
-    # ── Internal ─────────────────────────────────────────────────────────────
+
 
     def _to_tensor(self, arr: np.ndarray) -> torch.Tensor:
         return torch.FloatTensor(arr).to(self.device)

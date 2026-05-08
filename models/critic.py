@@ -1,22 +1,5 @@
 """
 models/critic.py
-----------------
-Twin LSTM + MLP Critic networks for TD3.
-
-Each critic estimates Q(s_seq, a):
-  Input : obs_seq (batch, seq_len, obs_dim)  + action (batch, 1)
-  Output: scalar Q-value (batch, 1)
-
-Using *two* independent critics (Q1, Q2) is the core of TD3's clipped
-double Q-learning trick that prevents over-estimation bias.
-
-Architecture per critic
------------------------
-  obs_seq  → LSTM → LayerNorm → h
-  concat(h, action)
-  → FC(lstm_hidden+1 → fc_hidden), ReLU
-  → FC(fc_hidden → fc_hidden//2), ReLU
-  → FC(fc_hidden//2 → 1)
 """
 
 import torch
@@ -71,14 +54,7 @@ class _SingleCritic(nn.Module):
 
 
 class TwinCritic(nn.Module):
-    """
-    Two independent critics (Q1, Q2) as required by TD3.
-
-    Usage
-    -----
-    q1, q2 = critic(obs_seq, action)   # both (batch, 1)
-    q1     = critic.Q1(obs_seq, action)
-    """
+    """Two independent critics (Q1, Q2) as required by TD3."""
 
     def __init__(
         self,

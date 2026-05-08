@@ -1,27 +1,5 @@
 """
 train.py
---------
-Main training script for the Empirical Deep Hedging project.
-
-Usage
------
-    python train.py                    # train both TD3 and DDPG (full run)
-    python train.py --agent td3        # train only TD3
-    python train.py --agent ddpg       # train only DDPG
-    python train.py --model merton     # use Merton jump-diffusion data
-    python train.py --episodes 1000    # override number of episodes
-    python train.py --tc 0.005         # use 50 bps transaction costs
-
-Training loop
--------------
-1. Pre-generate Heston (or Merton) price paths and cache to disk.
-2. Run WARMUP_EPISODES with random actions to fill the replay buffer.
-3. For each episode:
-   a. Reset environment → get initial obs_seq
-   b. Roll out one complete episode (T steps)
-   c. At each step: store transition, call train_step()
-   d. Every EVAL_EVERY episodes: evaluate on held-out paths and log results.
-4. Save final checkpoints and training logs.
 """
 
 import argparse
@@ -40,7 +18,7 @@ from agents.td3_agent    import TD3Agent
 from agents.ddpg_agent   import DDPGAgent
 
 
-# ── Argument parsing ─────────────────────────────────────────────────────────
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train deep hedging agents")
@@ -61,7 +39,7 @@ def parse_args():
     return parser.parse_args()
 
 
-# ── Evaluation helper ─────────────────────────────────────────────────────────
+
 
 def evaluate_agent(agent, eval_paths_S, eval_paths_v, tc, n_episodes=200):
     """Roll out the agent deterministically on n_episodes eval paths."""
@@ -89,7 +67,7 @@ def evaluate_agent(agent, eval_paths_S, eval_paths_v, tc, n_episodes=200):
     }
 
 
-# ── Main training loop ────────────────────────────────────────────────────────
+
 
 def train_agent(agent, train_env, eval_paths_S, eval_paths_v,
                 total_episodes, tc, run_name):
@@ -141,7 +119,7 @@ def train_agent(agent, train_env, eval_paths_S, eval_paths_v,
 
         history["train_pnl"].append(float(info["pnl"]))
 
-        # ── Periodic evaluation ──────────────────────────────────────────
+
         if ep % config.EVAL_EVERY == 0 or ep == total_episodes:
             metrics = evaluate_agent(agent, eval_paths_S, eval_paths_v,
                                      tc=tc, n_episodes=300)
@@ -163,7 +141,7 @@ def train_agent(agent, train_env, eval_paths_S, eval_paths_v,
                 "CVaR95":    f"{metrics['cvar95']:.4f}",
             })
 
-        # ── Checkpoint ───────────────────────────────────────────────────
+
         if ep % config.SAVE_EVERY == 0:
             agent.save(config.CHECKPOINT_DIR, tag=f"{run_name}_ep{ep}")
 
@@ -179,7 +157,7 @@ def train_agent(agent, train_env, eval_paths_S, eval_paths_v,
     return history
 
 
-# ── Entry point ───────────────────────────────────────────────────────────────
+
 
 def main():
     args = parse_args()
@@ -190,19 +168,19 @@ def main():
     print(f"  Model: {args.model.upper()}  |  TC: {args.tc*100:.1f}bps  |  Device: {args.device}")
     print("="*60)
 
-    # ── Generate / load data ─────────────────────────────────────────────
+
     print("\n[Step 1/3] Generating training paths...")
     train_S, train_v = generate_and_cache(args.model, config.N_TRAIN_PATHS, seed=args.seed)
 
     print("[Step 1/3] Generating evaluation paths...")
     eval_S, eval_v   = generate_and_cache(args.model, config.N_EVAL_PATHS,  seed=args.seed+1)
 
-    # ── Build environments ───────────────────────────────────────────────
+
     train_env = HedgingEnv(paths_S=train_S, paths_v=train_v, tc=args.tc)
     print(f"[Step 2/3] Env ready  — obs_space={train_env.observation_space.shape}, "
           f"action_space={train_env.action_space.shape}")
 
-    # ── Train agents ─────────────────────────────────────────────────────
+
     print("[Step 3/3] Starting training...\n")
     histories = {}
 
@@ -220,7 +198,7 @@ def main():
             total_episodes=args.episodes, tc=args.tc, run_name="ddpg"
         )
 
-    # ── Summary ──────────────────────────────────────────────────────────
+
     print("\n" + "="*60)
     print("  TRAINING COMPLETE — Final Evaluation Metrics")
     print("="*60)

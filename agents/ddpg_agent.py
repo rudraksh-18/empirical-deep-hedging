@@ -1,17 +1,5 @@
 """
 agents/ddpg_agent.py
----------------------
-Deep Deterministic Policy Gradient (DDPG) agent — baseline comparison.
-
-DDPG is the *original* algorithm used in early deep hedging studies.
-It suffers from Q over-estimation and training instability, which is why
-the paper (and our project) uses TD3 instead.  We include DDPG to reproduce
-the paper's finding that TD3 is significantly more stable and accurate.
-
-Differences from TD3:
-  - Single critic (no clipped double-Q)
-  - No delayed policy updates
-  - No target policy smoothing
 """
 
 import copy
@@ -74,7 +62,7 @@ class DDPGAgent:
         rewards  = batch["rewards"]
         dones    = batch["dones"]
 
-        # ── Single critic update (no clipping, no noise) ───────────────────
+
         with torch.no_grad():
             next_action = self.actor_target(next_obs).clamp(-1.0, 1.0)
             q_target    = rewards + config.GAMMA * (1.0 - dones) * \
@@ -88,7 +76,7 @@ class DDPGAgent:
         nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
         self.critic_opt.step()
 
-        # ── Actor update every step (no delay) ────────────────────────────
+
         actor_loss = -self.critic.Q1(obs, self.actor(obs)).mean()
 
         self.actor_opt.zero_grad()

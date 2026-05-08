@@ -1,20 +1,5 @@
 """
 visualize.py
-------------
-Generate publication-quality charts for the deep hedging project.
-
-Charts produced
----------------
-1. training_curves.png   — TD3 vs DDPG eval P&L mean/std over episodes
-2. pnl_distribution.png  — P&L density: TD3 vs DDPG vs Black-Scholes
-3. tc_sweep.png          — Hedging error vs transaction cost rate
-4. hedge_ratio.png       — Example episode: hedge delta over time
-5. vol_path.png          — Example Heston vol path vs stock price
-
-Usage
------
-    python visualize.py
-    python visualize.py --save_dir results/figs
 """
 
 import argparse
@@ -30,7 +15,7 @@ import config
 from data.generate_data       import HestonSimulator
 from benchmarks.black_scholes import BlackScholesHedger, bs_delta
 
-# ── Style ─────────────────────────────────────────────────────────────────────
+
 STYLE = {
     "figure.facecolor":  "#0d1117",
     "axes.facecolor":    "#161b22",
@@ -62,7 +47,7 @@ def save(fig, path):
     print(f"  Saved → {path}")
 
 
-# ── 1. Training Curves ────────────────────────────────────────────────────────
+
 
 def plot_training_curves(save_dir):
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
@@ -101,7 +86,7 @@ def plot_training_curves(save_dir):
     save(fig, os.path.join(save_dir, "training_curves.png"))
 
 
-# ── 2. P&L Distribution ──────────────────────────────────────────────────────
+
 
 def plot_pnl_distribution(save_dir):
     eval_path = os.path.join(config.RESULTS_DIR, "eval_summary.json")
@@ -112,7 +97,7 @@ def plot_pnl_distribution(save_dir):
     with open(eval_path) as f:
         summary = json.load(f)
 
-    # Use first TC level
+
     tc_key   = list(summary.keys())[0]
     results  = summary[tc_key]
 
@@ -122,7 +107,7 @@ def plot_pnl_distribution(save_dir):
     for r in results:
         label = r["label"]
         color = COLORS.get(label, "#c9d1d9")
-        # Reconstruct approximate distribution from mean/std (Gaussian proxy)
+
         x = np.linspace(r["mean"] - 4 * r["std"], r["mean"] + 4 * r["std"], 300)
         from scipy.stats import norm as sn
         y = sn.pdf(x, loc=r["mean"], scale=r["std"])
@@ -138,7 +123,7 @@ def plot_pnl_distribution(save_dir):
     save(fig, os.path.join(save_dir, "pnl_distribution.png"))
 
 
-# ── 3. Example Heston Path ────────────────────────────────────────────────────
+
 
 def plot_example_path(save_dir):
     sim = HestonSimulator()
@@ -156,7 +141,7 @@ def plot_example_path(save_dir):
     gs  = gridspec.GridSpec(2, 2, figure=fig, hspace=0.4, wspace=0.35)
     fig.suptitle("Example Heston Episode", fontsize=14, color="#c9d1d9")
 
-    # Stock price
+
     ax1 = fig.add_subplot(gs[0, 0])
     ax1.plot(t, S, color=COLORS["TD3"], linewidth=1.8)
     ax1.axhline(config.K, color="#f0883e", linestyle="--", alpha=0.7, label=f"Strike K={config.K}")
@@ -165,7 +150,7 @@ def plot_example_path(save_dir):
     ax1.legend()
     ax1.grid(True)
 
-    # Volatility
+
     ax2 = fig.add_subplot(gs[0, 1])
     ax2.plot(t, np.sqrt(v) * 100, color=COLORS["DDPG"], linewidth=1.8)
     ax2.axhline(np.sqrt(config.THETA) * 100, color="#8b949e",
@@ -175,7 +160,7 @@ def plot_example_path(save_dir):
     ax2.legend()
     ax2.grid(True)
 
-    # BS Delta over time
+
     ax3 = fig.add_subplot(gs[1, 0])
     ax3.plot(t, bs_deltas, color=COLORS["Black-Scholes"], linewidth=1.8)
     ax3.set_title("Black-Scholes Delta (Hedge Ratio)")
@@ -183,7 +168,7 @@ def plot_example_path(save_dir):
     ax3.set_xlabel("Trading Day")
     ax3.grid(True)
 
-    # Log returns histogram
+
     ax4 = fig.add_subplot(gs[1, 1])
     log_rets = np.diff(np.log(S))
     ax4.hist(log_rets, bins=30, color=COLORS["accent"], edgecolor="#0d1117", alpha=0.85)
@@ -195,7 +180,7 @@ def plot_example_path(save_dir):
     save(fig, os.path.join(save_dir, "example_path.png"))
 
 
-# ── 4. TC Sweep ───────────────────────────────────────────────────────────────
+
 
 def plot_tc_sweep(save_dir):
     eval_path = os.path.join(config.RESULTS_DIR, "eval_summary.json")
@@ -230,7 +215,7 @@ def plot_tc_sweep(save_dir):
     save(fig, os.path.join(save_dir, "tc_sweep.png"))
 
 
-# ── Main ─────────────────────────────────────────────────────────────────────
+
 
 def parse_args():
     p = argparse.ArgumentParser()

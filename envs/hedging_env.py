@@ -1,36 +1,8 @@
 """
 envs/hedging_env.py
--------------------
-Custom Gymnasium environment for dynamic option hedging.
-
-Scenario
---------
-We are a market-maker who sold (is short) a European call option and must
-hedge it dynamically by trading the underlying stock.  At each time-step the
-agent chooses a *target delta* (hedge ratio), and the environment:
-
-  1. Charges transaction costs proportional to the change in position.
-  2. Credits the P&L from the change in the underlying's value.
-  3. At maturity, charges the option payoff (short position).
-
-Observation
------------
-A rolling window of the last SEQ_LEN feature vectors, each of dimension OBS_DIM:
-  [log_moneyness, time_to_expiry, implied_vol, current_delta, log_return]
-
-Action
-------
-Scalar in [-1, 1] representing the *target* delta (hedge ratio).
-  -1 = fully short underlying (1 unit)
-   0 = no hedge
-  +1 = fully long underlying (1 unit)
-
-Reward
-------
+Reward:
   r_t = (delta_t * ΔS_t - tc * |delta_t - delta_{t-1}| * S_t) / option_premium
-  r_T += -max(S_T - K, 0) / option_premium   (option settles at maturity)
-
-Dividing by option_premium normalises rewards across different moneyness levels.
+  r_T += -max(S_T - K, 0) / option_premium
 """
 
 import numpy as np
@@ -91,7 +63,7 @@ class HedgingEnv(gym.Env):
         # Episode state (initialised in reset)
         self._reset_state()
 
-    # ── Internal helpers ────────────────────────────────────────────────────
+
 
     def _reset_state(self):
         self.step_idx = 0
@@ -99,11 +71,10 @@ class HedgingEnv(gym.Env):
         self.total_pnl = 0.0
         self.path_S: np.ndarray = None
         self.path_v: np.ndarray = None
-        # Observation history buffer (padded with zeros at start)
         self.obs_buffer = np.zeros((self.seq_len, self.obs_dim), dtype=np.float32)
 
     def _get_raw_obs(self, t: int) -> np.ndarray:
-        """Return the raw feature vector at step t."""
+
         S_t = self.path_S[t]
         v_t = self.path_v[t]
 
@@ -139,7 +110,7 @@ class HedgingEnv(gym.Env):
             self.path_S = S[0]
             self.path_v = v[0]
 
-    # ── Gymnasium API ───────────────────────────────────────────────────────
+
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)

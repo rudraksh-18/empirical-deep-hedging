@@ -1,18 +1,5 @@
 """
 agents/td3_agent.py
---------------------
-Twin Delayed Deep Deterministic Policy Gradient (TD3) agent.
-
-Key mechanisms (improvements over DDPG):
-  1. Clipped Double Q-Learning  — two critics; use min(Q1, Q2) as target → 
-                                   prevents Q over-estimation
-  2. Delayed Policy Updates     — actor updated every POLICY_DELAY critic steps →
-                                   more stable gradients
-  3. Target Policy Smoothing    — add clipped noise to target actions →
-                                   prevents exploitation of critic peaks
-
-Reference: Fujimoto et al. (2018) "Addressing Function Approximation Error
-in Actor-Critic Methods"  https://arxiv.org/abs/1802.09477
 """
 
 import copy
@@ -29,16 +16,7 @@ from agents.replay_buffer import ReplayBuffer
 
 
 class TD3Agent:
-    """
-    TD3 agent for continuous-action option hedging.
-
-    Parameters
-    ----------
-    device        : 'cpu' or 'cuda'
-    tc            : transaction cost (for env, not agent-internal)
-    actor_kwargs  : override LSTMActor defaults
-    critic_kwargs : override TwinCritic defaults
-    """
+    """TD3 agent for continuous-action option hedging."""
 
     def __init__(self, device: str = "cpu", **kwargs):
         self.device = torch.device(device)
@@ -69,18 +47,11 @@ class TD3Agent:
         self.actor_losses: list = []
         self.critic_losses: list = []
 
-    # ── Action selection ────────────────────────────────────────────────────
+
 
     @torch.no_grad()
     def select_action(self, obs_seq: np.ndarray, add_noise: bool = True) -> np.ndarray:
-        """
-        Given a state sequence, return an action.
 
-        Parameters
-        ----------
-        obs_seq   : (seq_len, obs_dim) numpy array
-        add_noise : add Gaussian exploration noise during training
-        """
         obs_t = torch.FloatTensor(obs_seq).unsqueeze(0).to(self.device)  # (1, seq, obs)
         action = self.actor(obs_t).squeeze(0).cpu().numpy()               # (1,)
         if add_noise:
@@ -88,14 +59,10 @@ class TD3Agent:
             action = np.clip(action + noise, -1.0, 1.0)
         return action.astype(np.float32)
 
-    # ── Learning step ───────────────────────────────────────────────────────
+
 
     def train_step(self, batch_size: int = config.BATCH_SIZE) -> dict:
-        """
-        One TD3 update step.
 
-        Returns dict with scalar loss values for logging.
-        """
         if len(self.buffer) < batch_size:
             return {}
 
@@ -108,7 +75,7 @@ class TD3Agent:
         rewards  = batch["rewards"]    # (B, 1)
         dones    = batch["dones"]      # (B, 1)
 
-        # ── Critic update ──────────────────────────────────────────────────
+
         with torch.no_grad():
             # Target action with smoothing noise
             noise = (
@@ -130,7 +97,7 @@ class TD3Agent:
 
         logs = {"critic_loss": critic_loss.item()}
 
-        # ── Delayed actor update ───────────────────────────────────────────
+
         if self.total_it % config.POLICY_DELAY == 0:
             actor_loss = -self.critic.Q1(obs, self.actor(obs)).mean()
 
@@ -149,7 +116,7 @@ class TD3Agent:
         self.critic_losses.append(critic_loss.item())
         return logs
 
-    # ── Utilities ───────────────────────────────────────────────────────────
+
 
     def _soft_update(self, src: nn.Module, tgt: nn.Module):
         """θ_target ← τ·θ + (1-τ)·θ_target"""
