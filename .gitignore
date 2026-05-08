@@ -22,3 +22,5 @@ Thumbs.db
 
 # Research papers or large PDFs (optional, but good practice to not bloat the repo)
 *.pdf
+Project_Report.md
+Codebase_Explanation.md
