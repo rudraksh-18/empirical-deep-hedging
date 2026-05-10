@@ -4,7 +4,6 @@ train.py
 
 import argparse
 import os
-import sys
 import time
 import json
 import numpy as np
@@ -86,7 +85,6 @@ def train_agent(agent, train_env, eval_paths_S, eval_paths_v,
         "wall_time":     [],
     }
 
-    warmup_done = False
     t0 = time.time()
 
     print(f"\n{'='*60}")
@@ -115,7 +113,7 @@ def train_agent(agent, train_env, eval_paths_S, eval_paths_v,
 
             # Train after warmup
             if ep > config.WARMUP_EPISODES:
-                logs = agent.train_step()
+                agent.train_step()
 
         history["train_pnl"].append(float(info["pnl"]))
 

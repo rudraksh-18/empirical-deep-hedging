@@ -3,17 +3,17 @@ visualize.py
 """
 
 import argparse
-import os, sys, json
+import os, json
 import numpy as np
+from scipy.stats import norm as sn
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-import seaborn as sns
 
 import config
 from data.generate_data       import HestonSimulator
-from benchmarks.black_scholes import BlackScholesHedger, bs_delta
+from benchmarks.black_scholes import bs_delta
 
 
 STYLE = {
@@ -44,7 +44,7 @@ COLORS = {
 def save(fig, path):
     fig.savefig(path, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
     plt.close(fig)
-    print(f"  Saved → {path}")
+    print(f"  Saved -> {path}")
 
 
 
@@ -56,7 +56,7 @@ def plot_training_curves(save_dir):
     for agent, color in [("td3", COLORS["TD3"]), ("ddpg", COLORS["DDPG"])]:
         hist_path = os.path.join(config.RESULTS_DIR, f"{agent}_history.json")
         if not os.path.exists(hist_path):
-            print(f"  [WARN] {hist_path} not found — skipping.")
+            print(f"  [WARN] {hist_path} not found - skipping.")
             continue
         with open(hist_path) as f:
             h = json.load(f)
@@ -109,7 +109,6 @@ def plot_pnl_distribution(save_dir):
         color = COLORS.get(label, "#c9d1d9")
 
         x = np.linspace(r["mean"] - 4 * r["std"], r["mean"] + 4 * r["std"], 300)
-        from scipy.stats import norm as sn
         y = sn.pdf(x, loc=r["mean"], scale=r["std"])
         ax.plot(x, y, color=color, label=f"{label}  (μ={r['mean']:.3f}, σ={r['std']:.3f})",
                 linewidth=2.5)
@@ -209,7 +208,7 @@ def plot_tc_sweep(save_dir):
                 label=label, linewidth=2, markersize=7)
 
     ax.set_xlabel("Transaction Cost (bps)")
-    ax.set_ylabel("CVaR-95 (↓ better)")
+    ax.set_ylabel("CVaR-95 (lower is better)")
     ax.legend()
     ax.grid(True)
     save(fig, os.path.join(save_dir, "tc_sweep.png"))

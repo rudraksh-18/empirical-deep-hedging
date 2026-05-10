@@ -3,7 +3,7 @@ evaluate.py
 """
 
 import argparse
-import os, sys, json
+import os, json
 import numpy as np
 
 import config

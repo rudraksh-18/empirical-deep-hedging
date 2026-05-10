@@ -12,6 +12,7 @@ __pycache__/
 checkpoints/
 results/*
 !results/figs/
+!results/*.json
 data/cache/
 
 # IDE and OS files
@@ -22,5 +23,6 @@ Thumbs.db
 
 # Research papers or large PDFs (optional, but good practice to not bloat the repo)
 *.pdf
+!Project_Report.pdf
 Project_Report.md
 Codebase_Explanation.md
